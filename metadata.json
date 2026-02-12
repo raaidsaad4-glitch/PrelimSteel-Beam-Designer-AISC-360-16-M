@@ -1,0 +1,5 @@
+{
+  "name": "Copy of PrelimSteel Beam Designer - AISC360-16M",
+  "description": "A structural steel beam design application using the Direct Analysis Method (AISC 360-16) and ASCE 7-16 load combinations, powered by AI to select and verify beam sections.",
+  "requestFramePermissions": []
+}
