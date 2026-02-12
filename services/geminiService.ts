@@ -1,13 +1,6 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { DesignInputs, AnalysisReport } from "../types";
-
-const API_KEY = process.env.API_KEY;
-
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
-
-const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const buildPrompt = (inputs: DesignInputs, heavierThan?: string): string => {
   const { parameters, loads, material, sectionStandard, sectionFamily, includeNotionalLoads } = inputs;
@@ -154,11 +147,19 @@ const responseSchema: object = {
 
 
 export const runBeamAnalysis = async (inputs: DesignInputs, heavierThan?: string): Promise<AnalysisReport> => {
+  // Ensure the API key is present at the moment of call
+  const apiKey = process.env.API_KEY;
+
+  if (!apiKey) {
+    throw new Error("API_KEY environment variable not set. Please add it to your project settings.");
+  }
+
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const prompt = buildPrompt(inputs, heavierThan);
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -168,11 +169,10 @@ export const runBeamAnalysis = async (inputs: DesignInputs, heavierThan?: string
     });
     
     if (!response.text) {
-      console.error("Gemini API returned an empty text response. Full response object:", response);
       if (response.promptFeedback?.blockReason) {
-        throw new Error(`Request blocked by API safety settings. Reason: ${response.promptFeedback.blockReason}. Please adjust your inputs and try again.`);
+        throw new Error(`Request blocked by API safety settings. Reason: ${response.promptFeedback.blockReason}.`);
       }
-      throw new Error("The AI model returned an empty response. This may be due to content filtering or a temporary API issue. Please try again.");
+      throw new Error("The AI model returned an empty response. Please try again.");
     }
     
     const jsonString = response.text.trim();
@@ -181,8 +181,8 @@ export const runBeamAnalysis = async (inputs: DesignInputs, heavierThan?: string
         const result = JSON.parse(jsonString);
         return result as AnalysisReport;
     } catch (parseError) {
-        console.error("Failed to parse JSON response from Gemini API:", { parseError, jsonString });
-        throw new Error("The AI model returned a malformed or incomplete response. This can happen with complex requests. Please try again.");
+        console.error("Failed to parse JSON response:", { parseError, jsonString });
+        throw new Error("The AI model returned an invalid data format. Please try again.");
     }
 
   } catch (error) {
