@@ -147,11 +147,11 @@ const responseSchema: object = {
 
 
 export const runBeamAnalysis = async (inputs: DesignInputs, heavierThan?: string): Promise<AnalysisReport> => {
-  // Ensure the API key is present at the moment of call
+  // Always fetch the API key inside the function to ensure it is fresh
   const apiKey = process.env.API_KEY;
 
   if (!apiKey) {
-    throw new Error("API_KEY environment variable not set. Please add it to your project settings.");
+    throw new Error("API_KEY environment variable not set. Please add a variable named 'API_KEY' in your Vercel Project Settings.");
   }
 
   try {
@@ -159,12 +159,12 @@ export const runBeamAnalysis = async (inputs: DesignInputs, heavierThan?: string
     const prompt = buildPrompt(inputs, heavierThan);
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseSchema: responseSchema,
-        temperature: 0.1, // Lower temperature for more deterministic, factual output
+        temperature: 0.1,
       },
     });
     
